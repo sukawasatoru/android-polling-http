@@ -13,12 +13,16 @@ import android.util.SparseArray;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileDescriptor;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Date;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
@@ -61,7 +65,7 @@ public class PollingServiceImpl extends JobService {
             }
 
             final String hash = generateUriHash(uri, method);
-            id = sUrisHash.indexOfValue(hash);
+            id = indexOfValue(sUrisHash, hash);
             if (id < 0) {
                 id = sCounter++;
                 sUrisHash.put(id, hash);
@@ -98,7 +102,7 @@ public class PollingServiceImpl extends JobService {
     public static void stop(Context context, UriRepository repo, String uri, String method) {
         final int id;
         synchronized (PollingServiceImpl.class) {
-            id = sUrisHash.indexOfValue(generateUriHash(uri, method));
+            id = indexOfValue(sUrisHash, generateUriHash(uri, method));
         }
 
         if (id < 0) {
@@ -106,6 +110,7 @@ public class PollingServiceImpl extends JobService {
             return;
         }
 
+        sUrisHash.remove(id);
 
         final JobScheduler js =
                 (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
@@ -176,8 +181,12 @@ public class PollingServiceImpl extends JobService {
 
         mDisposables.clear();
         final PersistableBundle bundle = params.getExtras();
-        start(this, mRepo, bundle.getString(KEY_URI),
-                bundle.getString(KEY_METHOD), bundle.getString(KEY_BODY));
+        final String uri = bundle.getString(KEY_URI);
+        final String method = bundle.getString(KEY_METHOD);
+
+        if (0 <= indexOfValue(sUrisHash, generateUriHash(uri, method))) {
+            start(this, mRepo, uri, method, bundle.getString(KEY_BODY));
+        }
         return false;
     }
 
@@ -189,6 +198,15 @@ public class PollingServiceImpl extends JobService {
     @Override
     public void onTrimMemory(int level) {
         log("onTrimMemory " + level);
+    }
+
+    @Override
+    protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
+        writer.println("sUriHash");
+        for (int index = 0, l = sUrisHash.size(); index < l; index++) {
+            writer.printf(Locale.getDefault(), "  [%d]: key=%d val=%s\n",
+                    index, sUrisHash.keyAt(index), sUrisHash.valueAt(index));
+        }
     }
 
     private Observable<String> createGetObservable(JobParameters params) {
@@ -253,5 +271,15 @@ public class PollingServiceImpl extends JobService {
 
     private static String generateUriHash(String uri, String method) {
         return uri + "-" + method;
+    }
+
+    private static <T> int indexOfValue(SparseArray<T> sparseArray, T t) {
+        for (int index = 0, l = sparseArray.size(); index < l; index++) {
+            if (Objects.equals(sparseArray.valueAt(index), t)) {
+                return index;
+            }
+        }
+
+        return -1;
     }
 }
