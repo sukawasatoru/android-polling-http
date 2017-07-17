@@ -8,4 +8,6 @@ import dagger.Component;
 @Component(modules = AppModule.class)
 public interface AppComponent {
     ActivityComponent plus(ActivityModule module);
+
+    ServiceComponent plus(ServiceModule module);
 }
