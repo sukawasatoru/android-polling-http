@@ -12,8 +12,8 @@ android {
         applicationId app_id
         minSdkVersion android_min_sdk_version.toInteger()
         targetSdkVersion android_target_sdk_version.toInteger()
-        versionCode 1
-        versionName '1.0'
+        versionCode version_code.toInteger()
+        versionName version_name
 
         jackOptions {
             enabled false
