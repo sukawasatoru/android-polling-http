@@ -3,7 +3,6 @@ package jp.tinyport.pollinghttp;
 import android.app.job.JobScheduler;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.TextView;
 
 import javax.inject.Inject;
 
@@ -23,7 +22,6 @@ public class MainActivity extends BaseActivity {
     @Inject
     JobScheduler mJobScheduler;
 
-    private TextView mTextView;
     private CompositeDisposable mDisposables;
 
     @Override
@@ -34,9 +32,6 @@ public class MainActivity extends BaseActivity {
 
         getComponent().inject(this);
 
-        setContentView(R.layout.activity_main);
-
-        mTextView = (TextView) findViewById(R.id.text);
         mDisposables = new CompositeDisposable();
 
         mJobScheduler.cancelAll();
