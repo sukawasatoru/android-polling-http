@@ -27,3 +27,17 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+ext {
+    def prop = loadVersionProperties()
+    version_name = prop.getProperty('version_name')
+    version_code = prop.getProperty('version_code')
+}
+
+def loadVersionProperties() {
+    def prop = new Properties()
+    def propName = hasProperty('version_properties') ?
+            version_properties : 'version.properties'
+    prop.load(new File(projectDir, propName).newInputStream())
+    prop
+}
